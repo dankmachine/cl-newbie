@@ -2,7 +2,7 @@
 
 Work in progress...
 
-As of now, the i3blocklet monitors the number of new listings for some craigslist query.
+As of now, the i3blocklet monitors the number of new listings for some craigslist query so you know when to shark your favorite page on the internet.
 
 ## i3blocks blocklet
 You'll find the only the python file in this repository. For an example configuration, check out .i3blocks.conf in my dotfiles.
