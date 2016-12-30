@@ -1,4 +1,4 @@
-# Dank Craigslist-Scraper
+# Dank Craigslist Scraper
 
 Work in progress...
 
