@@ -11,9 +11,6 @@ def checkURL(url):
     except urllib.error.URLError:
         return False
 
-class InvalidURLException(Exception):
-    pass
-
 def compare_time(listinfo1, listinfo2):
     """
     Take in two ordered lists of:
