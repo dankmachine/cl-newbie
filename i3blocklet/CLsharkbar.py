@@ -29,7 +29,7 @@ def compare_time(listinfo1, listinfo2):
             return False
         if time_int1 > time_int2:
             return True
-    return not time_str1[0] == time_str2[0]
+    return time_str1[0] != time_str2[0]
 
 def newer_listings(listinfo, lastseen):
     """
