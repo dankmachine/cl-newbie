@@ -4,12 +4,8 @@ import urllib.request, urllib.error, urllib.parse
 import pickle
 import webbrowser
 
-def checkURL(url):
-    try:
-        urllib.request.urlopen(url)
-        return True
-    except urllib.error.URLError:
-        return False
+class InvalidURLException(Exception):
+    pass
 
 def compare_time(listinfo1, listinfo2):
     """
@@ -42,57 +38,71 @@ def newer_listings(listinfo, lastseen):
             return listinfo[:index]
     return listinfo[:index] # in case all the current listings are wiped out lol
 
-# set url cause we only want this to do one thing
-# make sure to use a 'sort by newest' query
-# url = 'https://AREA.craigslist.com/search/QUERY'
+def main(argv):
+    """ Takes in a craigslist url and outputs the listings to a file """
 
-# Open url on middle click
-if os.environ.get('BLOCK_BUTTON') == '2':
-    webbrowser.open(url)
+    # First check that the url is valid
+    # make sure to use a 'sort by newest' query
+    # url = 'https://AREA.craigslist.com/search/...sort=date...'
+    url = argv[1]
+    cl_url_template = re.compile(r'https\:\/\/\w*\.craigslist\.org\/search\/.*sort=date.*')
 
-# Then scrape and store the listing urls
-# index order: listing url, year, month, day, hour, minute, second
-page_text = str(urllib.request.urlopen(url).read())
-url_ymdhms_pattern = re.compile(r'result\-row.+?\s*\<a\shref\=\"(\S+)\"[\S\s]*?datetime\=\"(\w+)\-(\w+)-(\w+)\s(\w+)\:(\w+)"[\S\s]*?\:\w\w\:(\w\w)')
-all_listinfo = re.findall(url_ymdhms_pattern, page_text)
+    if not (cl_url_template.fullmatch(url)):
+        raise InvalidURLException('craigslist url is invalid')
 
-block_instance = os.path.expanduser(os.environ.get('BLOCK_INSTANCE'))
-fileprefix = block_instance + '/' if block_instance else ''
+    # Open url on middle click
+    if os.environ.get('BLOCK_BUTTON') == '2':
+        webbrowser.open(url)
 
-# Compare fetched info with previous info to filter for new listings
-if os.path.isfile(fileprefix + 'lastseen.p'):
-    with open(fileprefix + 'lastseen.p', 'rb') as lastseen_pickle:
-        lastseen = pickle.load(lastseen_pickle)
-    new_listinfo = newer_listings(all_listinfo, lastseen) 
-else:
-    new_listinfo = all_listinfo
+    # Then scrape and store the listing urls
+    # index order: listing url, year, month, day, hour, minute, second
+    page_text = str(urllib.request.urlopen(url).read())
+    url_ymdhms_pattern = re.compile(r'result\-row.+?\s*\<a\shref\=\"(\S+)\"[\S\s]*?datetime\=\"(\w+)\-(\w+)-(\w+)\s(\w+)\:(\w+)"[\S\s]*?\:\w\w\:(\w\w)')
+    all_listinfo = re.findall(url_ymdhms_pattern, page_text)
 
-# Store the new lastseen
-if new_listinfo:
-    with open(fileprefix + 'lastseen.p', 'wb') as lastseen_pickle:
-        pickle.dump(new_listinfo[0], lastseen_pickle)
+    fileprefix = ''
+    block_instance = os.environ.get('BLOCK_INSTANCE')
+    if block_instance:
+        bi_path = os.path.expanduser(block_instance)
+        fileprefix = bi_path + '/'
 
-# Remove numlistings.p on right click
-if os.environ.get('BLOCK_BUTTON') == '3':
-    os.remove(fileprefix + 'numlistings.p')
+    # Compare fetched info with previous info to filter for new listings
+    if os.path.isfile(fileprefix + 'lastseen.p'):
+        with open(fileprefix + 'lastseen.p', 'rb') as lastseen_pickle:
+            lastseen = pickle.load(lastseen_pickle)
+        new_listinfo = newer_listings(all_listinfo, lastseen)
+    else:
+        new_listinfo = all_listinfo
 
-# Store the new number of new listings
-if os.path.isfile(fileprefix + 'numlistings.p'):
-    with open(fileprefix + 'numlistings.p', 'rb') as numlistings_pickle:
-        numlistings = pickle.load(numlistings_pickle) + len(new_listinfo)
-else:
-    numlistings = len(new_listinfo)
+    # Store the new lastseen
+    if new_listinfo:
+        with open(fileprefix + 'lastseen.p', 'wb') as lastseen_pickle:
+            pickle.dump(new_listinfo[0], lastseen_pickle)
 
-with open(fileprefix + 'numlistings.p', 'wb') as numlistings_pickle:
-    pickle.dump(numlistings, numlistings_pickle)
+    # Remove numlistings.p on right click
+    if os.environ.get('BLOCK_BUTTON') == '3':
+        os.remove(fileprefix + 'numlistings.p')
 
-# print the bar info:
-#   full text
-#   short text
-#   color
-print(numlistings)
-print(numlistings)
-if numlistings:
-    print('#00FF00')
-else:
-    print('#FFFFFF')
+    # Store the new number of new listings
+    if os.path.isfile(fileprefix + 'numlistings.p'):
+        with open(fileprefix + 'numlistings.p', 'rb') as numlistings_pickle:
+            numlistings = pickle.load(numlistings_pickle) + len(new_listinfo)
+    else:
+        numlistings = len(new_listinfo)
+
+    with open(fileprefix + 'numlistings.p', 'wb') as numlistings_pickle:
+        pickle.dump(numlistings, numlistings_pickle)
+
+    # print the bar info:
+    #   full text
+    #   short text
+    #   color
+    print(numlistings)
+    print(numlistings)
+    if numlistings:
+        print('#00FF00')
+    else:
+        print('#FFFFFF')
+
+if __name__ == "__main__":
+    main(sys.argv)
