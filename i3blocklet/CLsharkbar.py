@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 import sys, os, re, os.path
-import urllib.request, urllib.error, urllib.parse
+import urllib.request, urllib.error, urllib.parse, socket
 import pickle
 import webbrowser
+import time
 
 class InvalidURLException(Exception):
     pass
@@ -39,7 +40,15 @@ def newer_listings(listinfo, lastseen):
     return listinfo[:index] # in case all the current listings are wiped out lol
 
 def main(argv):
-    """ Takes in a craigslist url and outputs the listings to a file """
+    """
+    Takes in a craigslist url and outputs the listings to a file
+
+    Raises:
+        InvalidURLException -- if the passed-in url isn't a validly formatted craisglist url
+        urllib.request.URLError -- if we can't get the webpage data after retrying 
+        urllib.request.HTTPError -- if there's some unforseen problem (lol) with the request
+        socket.timeout -- if we time out before retrieving the request
+    """
 
     # First check that the url is valid
     # make sure to use a 'sort by newest' query
@@ -56,7 +65,17 @@ def main(argv):
 
     # Then scrape and store the listing urls
     # index order: listing url, year, month, day, hour, minute, second
-    page_text = str(urllib.request.urlopen(url).read())
+    retries = 3 # retry at most 3 times
+    for _ in range(retries):
+        try:
+            url_response = urllib.request.urlopen(url, timeout=15)
+            break
+        except (socket.timeout, urllib.request.URLError, urllib.request.HTTPError):
+            time.sleep(3)
+    else:
+        raise
+
+    page_text = str(url_response.read())
     url_ymdhms_pattern = re.compile(r'result\-row.+?\s*\<a\shref\=\"(\S+)\"[\S\s]*?datetime\=\"(\w+)\-(\w+)-(\w+)\s(\w+)\:(\w+)"[\S\s]*?\:\w\w\:(\w\w)')
     all_listinfo = re.findall(url_ymdhms_pattern, page_text)
 
