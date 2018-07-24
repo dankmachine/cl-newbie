@@ -1,6 +1,0 @@
-make it send emails or something
-
-Far in the future:
-    - make a neural network or something to identify good listings based
-    on the price and images
-    - then automatically send an email that is believably human
