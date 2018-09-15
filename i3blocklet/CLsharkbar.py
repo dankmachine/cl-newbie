@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import sys, os, re, os.path
-import urllib.request, urllib.error, urllib.parse, socket
+import urllib.request, socket
 import pickle
 import webbrowser
 import time
