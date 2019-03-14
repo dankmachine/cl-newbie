@@ -120,8 +120,6 @@ def main(argv):
     print(numlistings)
     if numlistings:
         print('#00FF00')
-    else:
-        print('#FFFFFF')
 
 if __name__ == "__main__":
     main(sys.argv)
